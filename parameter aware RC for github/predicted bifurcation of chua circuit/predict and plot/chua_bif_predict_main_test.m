@@ -4,7 +4,7 @@
 clc;clear;
 load('traindata.mat');
 dt=0.001;      % 解ode方程时的时间步长
-mod_num=20;    % 数据采样间隔
+mod_num=20;    % 数据采样间隔 
 drive_num=50;  % 驱动数据时间步长
 load opt_attractor_2_20240716T172246_814.mat 
 load min_rng_set.mat
@@ -37,7 +37,7 @@ outSize = 3;       % RC输出的数据维数（标签不输出）
 nonliner_num=2;    % 将RC拟合成线性和非线性（平方项）结合
 %%
   indata=traindata;  % 训练数据矩阵大小4*14000
-  X = zeros(nonliner_num*resSize+1,trainLen);  % 将机器拟合成x+x^2+1的非线性函数
+  X = zeros(nonliner_num*resSize+1,trainLen);  % 将机器拟合成F(x+x^2+1)的非线性函数
   Yt = indata(1:outSize,2:trainLen+1);      % RC 预测数据对应的目标系统数据
 %%
 Win = (2.0*rand(resSize,inSize)-1.0)*W_in_a;
@@ -82,7 +82,7 @@ for k=1:n_r
     u(4,1)=r(k);       % 在控制通道加对应的分岔参数值
     Y= zeros(outSize,testLen);    
     % 模拟测试阶段
-    for t = 1:100      % 先让reservoir运行 100 个时间步长
+    for t = 1:100      % 先让reservoir运行 100 个时间步长（暂态）
         x= (1-a)*x + a*tanh( Win*u + W*x );
         y = Wout*[1;x;x.^2;];      
         Y(:,t) = y;         % 将输出结果保存到 Y 矩阵

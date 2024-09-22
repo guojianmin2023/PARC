@@ -16,7 +16,7 @@ outSize = 1;        % RC 输出层数据维数（参数通道数据不输出）
 nonliner_num=2;     % 将 RC 拟合成线性和非线性（平方项）的集合
 %%
   indata=traindata;  % 2*8000
-  X = zeros(nonliner_num*resSize+1,trainLen);  % 将机器拟合成x+x^2+1的非线性函数
+  X = zeros(nonliner_num*resSize+1,trainLen);  % 将机器拟合成F(x+x^2+1)的非线性函数
   Yt = indata(1:outSize,2:trainLen+1);         % RC 预测数据对应的目标系统数据
 %%
 Win = (2.0*rand(resSize,inSize)-1.0)*W_in_a;
@@ -32,12 +32,13 @@ for i=1:resSize
 end
 rhoW = eigs(WW,1);          % 求WW的最大特征值
 W = WW .* (eig_rho /rhoW);  % 对 RC 连接矩阵进行缩放得到最终的连接矩阵
-%% 训练 RC
+%% 训练 Wout
 x=2*rand(resSize,1)-1;    % 随机初始化 RC 隐藏层神经元状态
 for t = 1:trainLen
     u = indata(:,t);      % 用每一列训练数据更新RC神经元状态并利用RC预测下一步数据
     x = (1-a)*x + a*tanh( Win*u + W*x );  % 更新 RC 节点的状态
     X(:,t) = [1;x;x.^2;];   % 经过RC隐藏层神经元输出函数作用后的节点状态
+    %收集每个时间步长下的隐藏层神经元状态
 end
 % 去掉initLen步长的 RC 预测数据和预测数据对应的目标系统真实数据
     X(:,1:initLen)=[];  % initLen = 100;
@@ -57,11 +58,11 @@ n_r=length(r);         % 分岔参数r的取值个数
 testLen=5000;          % 预测数据长度
 y = Wout*[1;x;x.^2;];  % 训练RC时，最后一列训练集数据输入RC后，RC的输出数据
 for k=1:n_r    % 生成每个分岔参数的分岔图数据
-    u(1,1)=y;  % 让RC生成的数据作为下一步的输入，这样可以避免出现预测数据为假数据
+    u(1,1)=y;  % 让RC生成的数据作为下一步的输入
     u(2,1)=r(k);  % 给RC输入时间序列加上对应的分岔参数
     Y= zeros(outSize,testLen);  % Y矩阵中只存放预测的变量时间序列
     %% 模拟测试阶段（先让RC工作一段时间）
-    for t = 1:100  % 先 RC 运行 100 个时间步长，得到的输出作为正式预测第一个数据的输入
+    for t = 1:100  % 先 RC 运行 100 个时间步长(暂态)
         x= (1-a).*x + a.*tanh( Win*u + W*x );
         y = Wout*[1;x;x.^2;];  % RC产生的数据
         Y(:,t) = y;            % 将输出结果保存到 Y矩阵
